@@ -91,7 +91,7 @@ template<class T>
 Rank Vector<T>::search(const T &e) const {
     for(Rank i=0;i<_size;i++)
         if(_elem[i]==e) return i;
-    return -1;
+    return _size;
 }
 
 template <class T>

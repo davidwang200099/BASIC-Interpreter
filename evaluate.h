@@ -5,55 +5,27 @@
 #ifndef BASIC_EVALUATE_EVALUATE_H
 #define BASIC_EVALUATE_EVALUATE_H
 
+//why move "basic_calc_rule.h"?
+#include "namedvariable.h"
+#include "Stack.h"
+#include "Vector.h"
 
-#include "evaluate_number.h"
-#include "evaluate_varname.h"
-
+#ifndef CALCRESULT
+#define CALCRESULT
 struct Calcresult{
     bool flag;
     int result;
-    Calcresult(bool flag,int result):result(result),flag(flag){}
+    Calcresult(int result,bool flag=true):result(result),flag(flag){}
 };
+#endif
 
-Calcresult evaluate(string &s,Vector<NamedVar> &v) {
-    Stack<int> opnd;
-    Stack<char> optr;
-    optr.push('\0');
-    Rank i = 0;
-    while(!optr.empty()) {
-        //cout<<i<<" "<<int(s[i])<<endl;
-        if(i<s.size()&&isdigit(s[i])) i = readNumber(s, opnd);
-        else {
-            if(i<s.size()&&(islower(s[i]) || isupper(s[i]))) i = readVar(s, i,opnd ,v);
-            else {
-                auto curr=(i<s.size())?s[i]:'\0';
-                switch(orderbetween(optr.top(), curr)) {
-                    case '<':
-                        optr.push(curr);
-                        ++i;
-                        break;
-                    case '=':
-                        optr.pop();
-                        ++i;
-                        break;
-                    case '>': {
-                        char op = optr.pop();
-                        int popnd2 = opnd.pop();
-                        int popnd1 = opnd.pop();
-                        opnd.push(calculate(popnd1, popnd2, op));
-                        break;
-                    }
-                    case '?':
-                        //cout << "Expression error!\n";
-                        return Calcresult(false,INT32_MIN);
-                        //return INT32_MIN;
-                        //exit(-1);
-                }
-            }
-        }
-        if(i==-1) return Calcresult(false,INT32_MIN);
-    }
-    return Calcresult(true,opnd.pop());
-}
+int readNumber(const string &s);
+
+Rank readNumber(const string &S,Stack<int> &opnd);
+
+Rank readVar(const string &s,Rank start,Stack<int> &opnd,Vector<NamedVar> &v);
+
+Calcresult evaluate(const string &s,Vector<NamedVar> &v);
+
 
 #endif //BASIC_EVALUATE_EVALUATE_H

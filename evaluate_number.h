@@ -13,17 +13,7 @@
 
 using namespace std;
 
-Rank readNumber(const string &s,Stack<int> &opnd){
-    int result=0;
-    Rank i=0;
-    while(i<s.size()&&isdigit(s[i])){
-        result*=10;
-        result+=(s[i])-'0';
-        i++;
-    }
-    opnd.push(result);
-    return i;
-}
+
 
 
 int Evaluate_num(const string &s){
