@@ -3,4 +3,4 @@ project(BASIC_interpreter)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(BASIC_interpreter main.cpp)
+add_executable(BASIC_interpreter  namedvariable.cpp evaluate.cpp linecode.cpp coderunner.cpp main.cpp)
