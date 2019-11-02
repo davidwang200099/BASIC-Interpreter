@@ -1,7 +1,3 @@
-//
-// Created by pc on 2019/10/24.
-//
-
 #ifndef BASIC_INTERPRETER_LINECODE_H
 #define BASIC_INTERPRETER_LINECODE_H
 
@@ -11,14 +7,14 @@
 #define Rank int
 #endif
 
-typedef enum {REM,LET,PRINT,INPUT,GOTO,END} Order;
+typedef enum {REM,LET,PRINT,INPUT,IF,GOTO,END,UNDEFINED} Order;
 
 #include <string>
 using namespace std;
 
 
-class Linecode {
-    public:
+struct Linecode {
+
         string code;//110 LET A=10
         Rank lineno;//110
         Order order;//LET
@@ -27,6 +23,8 @@ class Linecode {
         Linecode(const string &code) : code(code) { analyseCode(); }
 
         Linecode(){}
+
+        Linecode(Rank lineno):lineno(lineno){}
 
         Linecode(const Linecode &l) : code(l.code), order(l.order), lineno(l.lineno)  {}
 
@@ -38,13 +36,17 @@ class Linecode {
 
         void analyseCode();
 
-        void execOrder(Vector<NamedVar> &v);
+        bool operator==(const Linecode &e) const {return lineno==e.lineno;}
 
-    protected:
-        void initVar(Vector<NamedVar> &v);
-        void printVar(Vector<NamedVar> &v);
-        //void writeToFile(const string &name);
-        void jump();
+        bool operator<(const Linecode &e) const {return lineno<e.lineno;}
+
+        Linecode& operator=(const Linecode &e) {
+            code=e.code;
+            lineno=e.lineno;
+            order=e.order;
+            expression=e.expression;
+            return *this;
+        }
 };
 
 

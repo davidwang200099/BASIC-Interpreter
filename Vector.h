@@ -22,6 +22,7 @@ class Vector{
     protected:
         void expand();
         void shrink();
+        void sshrink();
     public:
         Vector():_size(0),_capacity(DEFAULT_CAPACITY){_elem=new T[_capacity];}
         Vector(T *elem,int size);
@@ -32,12 +33,10 @@ class Vector{
         T& operator[](Rank r) const {return _elem[r];}
         int size() const {return _size;}
         void push_back(const T &e);
+        void insert(const T &e,Rank i);//insert sth in front of _elem[i]
         T pop_back();
-        //void push_front(const T &e);
-        //T pop_front();
-        //void insert(Rank r,const T &e);
-        //void remove(Rank r);
-        //void remove(Rank start,Rank end);
+        void clear();
+        T& last() {return _elem[_size-1];}
         Rank search(const T &e) const;
         Rank binarysearch(const T &e,Rank lo,Rank hi) const;
         Rank binarysearch(const T &e) const {return binarysearch(e,0,_size);}
@@ -75,6 +74,20 @@ void Vector<T>::shrink() {
 }
 
 template <class T>
+void Vector<T>::sshrink() {
+    T *nelem=new T[_size=_capacity=DEFAULT_CAPACITY];
+    for(int i=0;i<_capacity;i++) nelem[i]=_elem[i];
+    delete [] _elem;
+    _elem=nelem;
+}
+
+template<class T>
+void Vector<T>::clear() {
+    if(_capacity>DEFAULT_CAPACITY) sshrink();
+    _size=0;
+}
+
+template <class T>
 void Vector<T>::push_back(const T &e) {
     if(_size==_capacity) expand();
     _elem[_size++]=e;
@@ -89,9 +102,9 @@ T Vector<T>::pop_back() {
 
 template<class T>
 Rank Vector<T>::search(const T &e) const {
-    for(Rank i=0;i<_size;i++)
+    for(Rank i=_size-1;i>=0;i--)
         if(_elem[i]==e) return i;
-    return _size;
+    return -1;
 }
 
 template <class T>
@@ -102,4 +115,13 @@ Rank Vector<T>::binarysearch(const T &e, Rank lo, Rank hi) const {
     }
     return --lo;
 }
+
+template <class T>
+void Vector<T>::insert(const T &e,Rank r) {
+    if(_size==_capacity) expand();
+    for(Rank i=_size;i>r;i++) _elem[i]=_elem[i-1];
+    _size++;
+    _elem[r]=e;
+}
+
 #endif //VECTOR_H
