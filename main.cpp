@@ -1,10 +1,9 @@
-#include <iostream>
-#include <cstring>
-#include "coderunner.h"
+#include "MainWindow.h"
+#include <QApplication>
 
-using namespace std;
-int main() {
-    Coderunner runner;
-    runner.run();
-    return 0;
+int main(int argc,char *argv[]) {
+    QApplication app(argc,argv);
+    MainWindow window;
+    window.show();
+    return app.exec();
 }

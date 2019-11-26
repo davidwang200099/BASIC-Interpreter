@@ -1,7 +1,5 @@
-
-
-#ifndef INC_1206PASCAL_STACK_H
-#define INC_1206PASCAL_STACK_H
+#ifndef STACK_H
+#define STACK_H
 
 #ifndef DEFAULT_CAPACITY
 #define DEFAULT_CAPACITY 1000
