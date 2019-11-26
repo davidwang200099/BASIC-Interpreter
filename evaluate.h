@@ -19,11 +19,21 @@ struct Calcresult{
 };
 #endif
 
-int readNumber(const string &s);
+bool isOperator(const char s);
 
-Rank readNumber(const string &S,Stack<int> &opnd);
+bool isLGVNS(const char s);//is legal Varname Start
+
+bool isLGVN(const char s);//is legal Varname
+
+bool isLGEXP(const char s);//is legal expression
+
+int readNumber(const string &s,Rank start=0,Rank *p=NULL);
+
+Rank readNumber(const string &s,Stack<int> &opnd);
 
 Rank readVar(const string &s,Rank start,Stack<int> &opnd,Vector<NamedVar> &v);
+
+string readVar(const string &s,Rank start=0,Rank *p=NULL);
 
 Calcresult evaluate(const string &s,Vector<NamedVar> &v);
 
