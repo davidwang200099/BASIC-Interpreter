@@ -4,10 +4,14 @@
 #include "linecode.h"
 #include "Vector.h"
 #include <fstream>
-
-//typedef enum{INTERACTION,STORATION,EXECUTION} Mode;
+#include <QObject>
+class Console;
 
 typedef enum{QUIT_ORDER,NORMAL_ORDER,BASIC_CODE} InputType;
+typedef enum{SeqFinished,Pause4UsrInput,Terminate4Error} RunResult;
+
+
+
 
 #ifndef Execflag
 #define Execflag bool
@@ -21,28 +25,43 @@ typedef enum{QUIT_ORDER,NORMAL_ORDER,BASIC_CODE} InputType;
 #define FAIL false
 #endif
 
-class Coderunner{
+
+typedef enum{INPUTCODE,INPUTVALUE,SUCCESSIVERUN} Runnermode;
+
+class Coderunner
+{
+        friend class Console;
     private:
         Vector<Linecode> codes;
         Vector<NamedVar> vars;
+        Vector<int> runtimeVars;
         Rank currentLine;
+        Console *console;
+        Runnermode runnermode;
+        Stack<int> Runtime_stack;
+        //Registers regs;
     protected:
         void writeToFile(const string &name);
-        void  runCode(const Linecode &code);
+        void runCode(const Linecode &code);
         void assignVar(const Linecode &code);
         void printExpression(const Linecode &code);
         void inputValue(const Linecode &code) noexcept;
         void jumpto(const Linecode &code);
         void conditionCtrl(const Linecode &code);
         void judgeCondition(const string &expression,Vector<NamedVar> &vars,bool &result);
+        void endProg() noexcept;
+        void functionCall(const Linecode &code);
+        void endFunctionCall();
+        void skipFunctionBody();
+        //void readassignValue();
     public:
-        Coderunner();
+        Coderunner(Console *console);
         ~Coderunner(){}
-        void run();
-        void runCodes();
+        //void run();
+        RunResult runCodes();
         void listCodes() noexcept ;
         void runFile(const string &filename);
-        void expressWelcome()noexcept{cout<<"Welcome to BASIC!\n";}
+        //void expressWelcome()noexcept ;
         void loadfromFile(const string &filename);
         InputType processOrder(const string &lineofcode);
 };

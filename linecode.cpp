@@ -8,6 +8,9 @@ Order toOrder(string &str) {
     if(str=="GOTO") return GOTO;
     if(str=="END") return END;
     if(str=="IF") return IF;
+    if(str=="CALL") return CALL;
+    if(str=="Sub") return SUB;
+    if(str=="End") return ENDSUB;
     return UNDEFINED;
 }
 
@@ -25,7 +28,7 @@ Rank Linecode::readLineno(Rank start,Rank &lineno)  {
 Rank Linecode::readOrder(Rank start,Order &order)  {
     string str;
     //while(start<code.size()&&code[start]==' ') start++;
-    while(start<code.size()&&isupper(code[start]))
+    while(start<code.size()&&(isupper(code[start])||islower(code[start])))
         str += code[start++];
 
     order=toOrder(str);
@@ -44,7 +47,7 @@ void Linecode::analyseCode() {
     else lineno=INT32_MIN;
 
     while(ptr<code.size()&&isspace(code[ptr])) ptr++;
-    if(ptr<code.size()&&isupper(code[ptr])) ptr=readOrder(ptr,order);
+    if(ptr<code.size()&&(isupper(code[ptr])||islower(code[ptr]))) ptr=readOrder(ptr,order);
 
     while(ptr<code.size()&&isspace(code[ptr])) ptr++;
 

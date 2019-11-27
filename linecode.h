@@ -8,7 +8,7 @@
 #define Rank int
 #endif
 
-typedef enum {REM,LET,PRINT,INPUT,IF,GOTO,END,UNDEFINED} Order;
+typedef enum {REM,LET,PRINT,INPUT,IF,GOTO,END,CALL,SUB,ENDSUB,UNDEFINED} Order;
 
 #include <string>
 

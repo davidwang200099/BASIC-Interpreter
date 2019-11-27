@@ -53,7 +53,6 @@ Rank readVar(const string &s,Rank start,Stack<int> &opnd,Vector<NamedVar> &v){
     NamedVar var(varname);
     int rank=v.search(var);
     if(rank==-1) {
-        cout<<"'"<<varname<<"' "<<"was not declared in this scope!\n";
         return -1;
     }
     opnd.push(v[rank].value);

@@ -1,7 +1,3 @@
-//
-// Created by pc on 2019/10/24.
-//
-
 #ifndef VECTOR_H
 #define VECTOR_H
 
