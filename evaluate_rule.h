@@ -1,11 +1,9 @@
 #ifndef BASIC_EVALUATE_BASIC_CALC_RULE_H
 #define BASIC_EVALUATE_BASIC_CALC_RULE_H
 
+
 #define N_OPTR 10
 
-#ifndef OPND
-#define OPND int
-#endif
 
 #define EVALUATE_ERROR Calcresult(INT32_MIN,false)
 

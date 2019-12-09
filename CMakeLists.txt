@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.13)
-project(BASIC_interpreter)
+cmake_minimum_required(VERSION 3.15)
+project(BASIC)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
-add_executable(BASIC_interpreter  namedvariable.cpp evaluate.cpp linecode.cpp coderunner.cpp main.cpp)
+add_executable(BASIC main.cpp namedvariable.cpp evaluate.cpp linecode.cpp coderunner.cpp)
