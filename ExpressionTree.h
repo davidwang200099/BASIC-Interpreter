@@ -1,4 +1,5 @@
 #include "evaluate.h"
+#include "Queue.h"
 typedef union{
     char optr;
     int opnd;
@@ -14,7 +15,7 @@ data_t & operator=(data_t data,const char &c){
     return data;
 }*/
 
-typedef enum {OPTR,OPND} Type;
+typedef enum {UNDEFINED,OPTR,OPND} Type;
 
 struct ExpressionNode{
     data_t data;
@@ -22,6 +23,7 @@ struct ExpressionNode{
     //ExpressionNode *parent;
     ExpressionNode *left;
     ExpressionNode *right;
+    ExpressionNode():left(NULL),right(NULL){}
 };
 
 class ExpressionTree{
@@ -37,15 +39,19 @@ class ExpressionTree{
     protected:
         void removeLeaf(ExpressionNode *x);
         void remove(ExpressionNode *x);
+
+    public:
+        void Trav_Level(ExpressionNode *x);
 };
 
 ExpressionTree::~ExpressionTree(){
     remove(_root);
     _root=NULL;
+    //std::cout<<"Destructor called"<<endl;
 }
 
 void ExpressionTree::removeLeaf(ExpressionNode *x){//x is a leaf node
-    delete x;
+     delete x;
 }
 
 void ExpressionTree::remove(ExpressionNode *x){
@@ -65,3 +71,14 @@ Calcresult ExpressionTree::Evaluate(ExpressionNode *x) {
     return calculate(opnd1.result,opnd2.result,x->data.optr);
 }
 
+void ExpressionTree::Trav_Level(ExpressionNode *x) {
+    Queue<ExpressionNode *> q;
+    if(!x) return;
+    q.Enqueue(x);
+    while(!q.Isempty()){
+        ExpressionNode *t=q.Dequeue();
+        if(t->left) q.Enqueue(t->left);
+        if(t->right) q.Enqueue(t->right);
+        cout<<((t->type==OPND)?(t->data.opnd):(t->data.optr))<<" ";
+    }
+}

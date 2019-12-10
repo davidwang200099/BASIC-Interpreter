@@ -141,7 +141,7 @@ Calcresult evaluate(const string &s,Vector<NamedVar> &v) {
                 opnd.push(node);
             }else{
                 char curr=(i<s.size())?s[i]:'\0';
-                switch(orderbetween(optr.top()->data.optr,curr)){
+                switch(orderbetween(optr.top()?optr.top()->data.optr:'\0',curr)){
                     case '<':
                         node->data.optr=curr;
                         node->type=OPTR;
@@ -162,8 +162,8 @@ Calcresult evaluate(const string &s,Vector<NamedVar> &v) {
                         if(rslt.flag) opnd.push(rslt.result);
                         else return EVALUATE_ERROR;*/
                         ExpressionNode *op=optr.pop();
-                        ExpressionNode *popnd1=opnd.empty()?NULL:opnd.pop();
                         ExpressionNode *popnd2=opnd.empty()?NULL:opnd.pop();
+                        ExpressionNode *popnd1=opnd.empty()?NULL:opnd.pop();
                         op->left=popnd1;
                         op->right=popnd2;
                         opnd.push(op);
@@ -172,5 +172,6 @@ Calcresult evaluate(const string &s,Vector<NamedVar> &v) {
         }
     }
     ExpressionTree tree(opnd.pop());
+    //tree.Trav_Level(tree.root());
     return tree.Evaluate(tree.root());
 }
