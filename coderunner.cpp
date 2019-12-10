@@ -1,9 +1,10 @@
 #include "coderunner.h"
-
+#include "Console.h"
+#include <QDebug>
 string readOrder(const string &s, int start = 0, int *p = NULL) {
     string order;
     Rank i = start;
-    while(i < s.size() && s[i] == ' ') i++;
+    while(i < s.size() && isspace(s[i])) i++;
     while(i < s.size() && isLGVN(s[i])) order += s[i++];
     if(p) *p = i;
     return order;
@@ -15,9 +16,9 @@ bool isTHEN(const string &s,Rank start){
     return s[start]=='T'&&s[start+1]=='H'&&s[start+2]=='E'&&s[start+3]=='N';
 }
 
-Coderunner::Coderunner() : currentLine(0) {
-    expressWelcome();
-}
+Coderunner::Coderunner(Console *console):
+    currentLine(0),console(console),runnermode(INPUTCODE) {}
+
 
 InputType Coderunner::processOrder(const string &lineofcode) {
     Rank start = 0;
@@ -31,94 +32,68 @@ InputType Coderunner::processOrder(const string &lineofcode) {
         while(isspace(lineofcode[start])) start++;
         string filename = string(lineofcode, start);
         if(!filename.empty()) writeToFile(filename);
-        else writeToFile("out.vb");
+        else writeToFile("OUT.VB");
         return NORMAL_ORDER;
     }
-    if(ordertoRunner == "CLEARBUFFER") {
+    if(ordertoRunner == "CLEAR") {
         codes.clear();
         vars.clear();
         return NORMAL_ORDER;
     }
-    if(ordertoRunner == "CLEAR") {
-        system("clear");
-        expressWelcome();
+    if(ordertoRunner == "CLS") {
+        //system("cls");
+        console->clear();
+        console->expressWelcome();
         return NORMAL_ORDER;
     }
     if(ordertoRunner == "RUN") {
-        runCodes();
-        return NORMAL_ORDER;
-    }
-    if(ordertoRunner == "RUNFILE") {
-        while(isspace(lineofcode[start])) start++;
-        string filename = string(lineofcode, start);
-        if(!filename.empty()) runFile(filename);
-        else cout << "File name empty!\n";
+        runnermode=SUCCESSIVERUN;
+        currentLine=0;
+        vars.clear();
+        if(runCodes()!=Pause4UsrInput) runnermode=INPUTCODE;
+        //else qDebug()<<"Pause for user input!\n";
         return NORMAL_ORDER;
     }
     if(ordertoRunner == "LOAD") {
-        while(isspace(lineofcode[start])) start++;
-        string filename = string(lineofcode, start);
-        if(!filename.empty()) loadfromFile(filename);
-        else cout << "File name empty!\n";
-        return NORMAL_ORDER;
+            while(isspace(lineofcode[start])) start++;
+            string filename = string(lineofcode, start);
+            if(!filename.empty()) loadfromFile(filename);
+            else console->write("File name empty!\n");
+            return NORMAL_ORDER;
     }
     return BASIC_CODE;
 }
-
-void Coderunner::run() {
-    string lineofcode;
-    while(true) {
-        getline(cin, lineofcode, '\n');
-        //analyse what kind of input it is.Order to the coderunner/BASIC code.
-        InputType inputtype = processOrder(lineofcode);
-        if(inputtype == QUIT_ORDER) return;
-        else {
-            if(inputtype == BASIC_CODE) {
-                Linecode newcode = Linecode(lineofcode);
-
-                if(newcode.lineno == INT32_MIN) {
-                    try{runCode(lineofcode);}
-                    catch(int x){cout<<"Execution error of single line of code.\n";}
-                } else {
-                    Rank r = codes.binarysearch(newcode);
-                    if(r>=0&&newcode.lineno==codes[r].lineno) codes[r]=newcode;
-                    else codes.insert(newcode,r+1);
-                }
-
-            }
-        }
-    }
-}
-
 
 void Coderunner::assignVar(const Linecode &code) {
     Rank i = 0;
     const string &expression = code.expression;
     string newvarname;
 
-    if(expression.empty()) throw Exception("Syntax error:assigning expression lost.");//avoid "LET"
+    if(expression.empty())
+        throw Exception("Syntax error:assigning expression lost.\n");//avoid "LET"
 
     while(i < expression.size() && isspace(expression[i])) i++;//skip space
 
     if(isLGVNS(expression[i]))
         newvarname = readVar(expression, i, &i);
-    else throw Exception("Syntax error:assigning expression lost");//avoid "LET    "
+    else throw Exception("Syntax error:assigning expression lost.\n");//avoid "LET    "
 
     while(i < expression.size() && isspace(expression[i])) i++;
-    if(i == expression.size()) throw Exception("Syntax error:assigned value lost.");//avoid "LET   A    "
+    if(i == expression.size())
+        throw Exception("Syntax error:assigned value lost.\n");//avoid "LET   A    "
 
     if(expression[i] == '=') i++;
-    else throw Exception("Syntax error:invalid syntax.");//avoid strange expressions such as "LET A  !"
+    else throw Exception("Syntax error:invalid syntax.\n");//avoid strange expressions such as "LET A  !"
 
     Calcresult result = evaluate(string(expression, i), vars);//avoid illegal expression
     NamedVar var(newvarname);
     Rank r = vars.search(var);
     if(r != -1) {
         if(result.flag) vars[r].value = result.result;
-        else throw Exception("Expression error.");
+        else throw Exception("Expression error.\n");
     } else {
         if(result.flag) vars.push_back(NamedVar(newvarname,result.result));
-        else throw Exception("Expression error.");
+        else throw Exception("Expression error.\n");
     }
 }
 
@@ -127,20 +102,39 @@ void Coderunner::jumpto(const Linecode &code) {
     int nextLineNumber = readNumber(code.expression, 0);
     Linecode lcode(nextLineNumber);
     currentLine = codes.search(lcode) - 1;
-    if(currentLine < -1) {
-        throw Exception("Line number not found.");
+    if(currentLine <= -1) {
+        throw Exception("Line number not found.\n");
     }
 }
 
 void Coderunner::inputValue(const Linecode &code) noexcept {
-    int input;
-    cin >> input;
-    cin.get();
-    string varname = readVar(code.expression);
-    NamedVar var(varname);
-    Rank r = vars.search(var);
-    if(r >= 0) vars[r].value = input;
-    else {var.value=input;vars.push_back(var);}
+     runnermode=INPUTVALUE;
+     string varname=readVar(code.expression);
+     NamedVar var(varname);
+     Rank r = vars.search(var);//create a new var
+     if(r >= 0) currentVar=r;//set currentVar to r for user input
+     else {vars.push_back(var);currentVar=vars.size()-1;}
+
+}
+
+void Coderunner::functionCall(const Linecode &code){
+    Runtime_stack.push(currentLine);//push %rip into stack as return address
+    string functionName=code.expression;//search for the function
+    for(int i=0;i<codes.size();i++){
+        if(codes[i].order==SUB&&codes[i].expression==functionName){
+            currentLine=i;//set %rip to the entry of the function
+            return;
+        }
+    }
+    throw Exception("Can not find function \""+code.expression+"\" !\n");
+}
+
+void Coderunner::endFunctionCall(){
+    currentLine=Runtime_stack.pop();//set %rip to the return address
+}
+
+void Coderunner::skipFunctionBody(){
+    while(codes[currentLine].order!=ENDSUB) currentLine++;
 }
 
 void Coderunner::runCode(const Linecode &code) {
@@ -161,34 +155,49 @@ void Coderunner::runCode(const Linecode &code) {
                 inputValue(code);
                 break;
             case END:
+                endProg();
                 break;
             case IF:
                 conditionCtrl(code);
                 break;
+            case CALL:
+                functionCall(code);
+                break;
+            case ENDSUB:
+                endFunctionCall();
+                break;
+            case SUB:
+                skipFunctionBody();
+                break;
             default:
-                throw Exception("Undefined order.");
+                throw Exception("Undefined order.\n");
         }
     }
     catch(Exception ex){
-        cout<<"\"\t"<<code.code<<"\t\""<<endl;
-        cout<<ex.what()<<endl;
+        string str="\"\t"+code.code+"\t\"\n";
+        console->write(str);
+        console->write(ex.what());
         throw -1;
     }
 }
 
-void Coderunner::runCodes() {
-    vars.clear();
-    currentLine = 0;
-    while(currentLine < codes.size()) {
-        //if(!runCode(codes[currentLine])) {cout<<"Process terminated with exit code -1.\n";return FAIL;}
-        try{ runCode(codes[currentLine]); }
-        catch(int x){cout<<"Execution terminated with exit code -1.\n";break; }
-        currentLine++;
+RunResult Coderunner::runCodes() {
+    while(currentLine>=0 &&currentLine<codes.size()) {
+        try{
+            runCode(codes[currentLine]);
+            currentLine+=1;
+            // pause the execution of program and wait for user input
+            if(runnermode==INPUTVALUE) return Pause4UsrInput;
+        }catch(int x){
+            console->write("Execution terminated with exit code -1.\n");
+            return Terminate4Error;
+        }
     }
-    vars.clear();
-    cout<<"Execution terminated with exit code 0.\n";
+    return SeqFinished;
 }
-
+/*
+ * assisting function,please just ignore it.
+ */
 void Coderunner::runFile(const string &filename) {
     ifstream file;
     string lineofcode;
@@ -206,16 +215,8 @@ void Coderunner::runFile(const string &filename) {
         runCodes();
     }
     catch(Exception &ex){
-        cout<<ex.what()<<endl;
+        console->write(ex.what());
     }
-    /*if(runCodes()) {
-        codes.clear();
-
-    }
-    else {
-        codes.clear();
-
-    }*/
     codes.clear();
 }
 
@@ -223,45 +224,45 @@ void Coderunner::loadfromFile(const string &filename) {
     ifstream file;
     string lineofcode;
     file.open(filename);
-    if(!file) {
-        cout << "Can not load from file '" << filename << "' !\n";
+    if(!file) {//if file with the name of "filename" not found
+        console->write("Can not load from file '" + filename +"' !\n");
         return ;
     }
-    codes.clear();
+    codes.clear();//clear the buffer for the new codes
     while(!file.eof()) {
         getline(file, lineofcode, '\n');
         codes.push_back(Linecode(lineofcode));
     }
     file.close();
-    cout<<"Successfully load codes from file '"<<filename<<"'.\n";
+    console->write("Successfully load codes from file '"+filename+"'.\n");
 }
 
 void Coderunner::writeToFile(const string &name) {
         ofstream file;
         file.open(name);
-        if(!file) {
+        if(!file) {//actually this will hardly happen.
             throw Exception("Can not open file '"+name+"' !\n");
         }
         if(!codes.empty()) {
             for(int i = 0; i < codes.size(); i++) {
                 file << codes[i].code << endl;
             }
-            file << "END";
-            cout << "Write to file \"" << name << "\" successfully.\n";
+            console->write( "Write to file \"" + name + "\" successfully.\n");
         }
         file.close();
 }
 
 void Coderunner::printExpression(const Linecode &code) {
     Calcresult calresult = evaluate(code.expression, vars);
-    if(calresult.flag) cout << calresult.result << endl;
+    if(calresult.flag)
+        console->write(QString::number(calresult.result).toStdString());
     else {throw Exception("Expression error.");}
 }
 
 void Coderunner::judgeCondition(const string &expression,Vector<NamedVar> &vars,bool &result) {
     Calcresult calresult=evaluate(expression,vars);
     if(calresult.flag) result=bool(calresult.result);
-    else {result=false;throw Exception("Expression error in the if-clause.");}
+    else {result=false;throw Exception("Expression error in the if-clause.\n");}
 }
 
 
@@ -285,16 +286,24 @@ void Coderunner::conditionCtrl(const Linecode &code){
 
         /*
          * if the condition is false,python will not analyse the grammar of the "then" clause.
+         * if the condition is true,THEN-clause will be executed
          */
         if(ctrlcondition) {Linecode exec(string(expression, hi));runCode(exec);}
 }
 
 void Coderunner::listCodes() noexcept {
     if(codes.empty()) {
-        cout << "No line of code stored.\n";
+        console->write("No line of code stored.\n");
         return ;
     }
     for(int i = 0; i < codes.size(); i++)
-        cout << codes[i].code << endl;
+        console->write(codes[i].code);
+}
+
+void Coderunner::endProg() noexcept{
+    vars.clear();//clear the memory but don't clear the buffer of codes
+    console->write("Execution terminated with exit code 0.\n");
+    currentLine=-2;
+
 }
 

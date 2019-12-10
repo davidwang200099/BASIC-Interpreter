@@ -1,10 +1,8 @@
-
-
-#ifndef INC_1206PASCAL_STACK_H
-#define INC_1206PASCAL_STACK_H
+#ifndef STACK_H
+#define STACK_H
 
 #ifndef DEFAULT_CAPACITY
-#define DEFAULT_CAPACITY 1000
+#define DEFAULT_CAPACITY 20
 #endif
 
 template<class T>
@@ -17,7 +15,7 @@ class Stack{
         void expand();
         void shrink();
     public:
-        Stack(){_elem=new T[_capacity=DEFAULT_CAPACITY];_size=0;}
+        Stack(int capacity=DEFAULT_CAPACITY){_elem=new T[_capacity=capacity];_size=0;}
         ~Stack(){delete [] _elem;}
         int size() const {return _size;}
         bool empty() const {return _size==0;}

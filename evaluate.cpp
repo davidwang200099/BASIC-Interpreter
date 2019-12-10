@@ -24,6 +24,20 @@ bool isOperator(const char s){
            s=='<';
 }
 
+bool isSingleMinus(const string &s,Rank i){
+    if(s[i]!='-') return false;
+    if(i==0) return true;
+    while(i-1>=0&&isspace(s[i-1])) i--;
+    return s[i-1]=='(';
+}
+
+bool isSinglePlus(const string &s,Rank i){
+    if(s[i]!='+') return false;
+    if(i==0) return true;
+    while(i-1>=0&&isspace(s[i-1])) i--;
+    return s[i-1]=='(';
+}
+
 bool isLGVNS(const char s){return isupper(s)||islower(s)||s=='_';}//is legal Varname Start
 
 bool isLGVN(const char s){return isupper(s)||islower(s)||isdigit(s)||s=='_';}//is legal Varname
@@ -53,7 +67,6 @@ Rank readVar(const string &s,Rank start,Stack<int> &opnd,Vector<NamedVar> &v){
     NamedVar var(varname);
     int rank=v.search(var);
     if(rank==-1) {
-        cout<<"'"<<varname<<"' "<<"was not declared in this scope!\n";
         return -1;
     }
     opnd.push(v[rank].value);
@@ -74,44 +87,50 @@ string readVar(const string &s,Rank start,Rank *p){
 }
 //It can cope with expressions filled with Space.
 Calcresult evaluate(const string &s,Vector<NamedVar> &v) {
-    Stack<int> opnd;
+    Stack<int> opnd;//stack of operated numbers and operator
     Stack<char> optr;
     optr.push('\0');
     Rank i = 0;
     //cout<<"expression:"<<s<<endl;
-    while(!optr.empty()) {
-        while(i<s.size()&&isspace(s[i])) i++;
-        if(i<s.size()&&isdigit(s[i])) i = readNumber(s,i, opnd);
+    while(!optr.empty()) {//process every char before optr turns empty
+        while(i<s.size()&&isspace(s[i])) i++;//skip space 
+        if(i<s.size()&&isdigit(s[i])) i = readNumber(s,i, opnd);//if current char is a number,then read it
         else {
-            if(i<s.size()&&isLGVNS(s[i])) i = readVar(s, i,opnd ,v);
+            if(i<s.size()&&isLGVNS(s[i])) i = readVar(s, i,opnd ,v);//if current char is a named variable
             else {
-                auto curr=(i<s.size())?s[i]:'\0';
+                auto curr=(i<s.size())?s[i]:'\0';//if current char is an operator
+                if(i<s.size()){
+                    if(isSingleMinus(s,i)||isSinglePlus(s,i)) //if operator is single +/-
+                        opnd.push(0);//-2==0-2
+                }
                 switch(orderbetween(optr.top(), curr)) {
-                    case '<':
-                        optr.push(curr);
+                    case '<'://current operator is prior to stack-top operator
+                        optr.push(curr);//evaluation delayed.Current operator pushed into the stack
                         ++i;
                         break;
-                    case '=':
-                        optr.pop();
+                    case '='://the same priority :curr is ')' or '\0'
+                        optr.pop();//omit bracket and accept next char
                         ++i;
                         break;
-                    case '>': {
+                    case '>': {//stack-top operator is prior to current operator
                         char op = optr.pop();
+                        if(opnd.empty()) return EVALUATE_ERROR;
                         int popnd2 = opnd.pop();
-                        int popnd1 = opnd.pop();
+                        if(opnd.empty()) return EVALUATE_ERROR;
+                        int popnd1 = opnd.pop();//evaluation can be done
                         Calcresult rslt=calculate(popnd1, popnd2, op);
-                        if(rslt.flag) opnd.push(rslt.result);
-                        else return EVALUATE_ERROR;
+                        if(rslt.flag) opnd.push(rslt.result);//if evaluation is valid,push it into stack
+                        else return EVALUATE_ERROR;//else grammatical error.
                         break;
                     }
-                    case '?':
+                    case '?'://grammatical error.
                         return EVALUATE_ERROR;
                 }
             }
         }
         if(i==-1) return EVALUATE_ERROR;
     }
-    if(!opnd.empty()) {/*cout<<"result:"<<opnd.top()<<endl;*/return opnd.pop();}
-    else return EVALUATE_ERROR;
+    if(!opnd.empty()) return opnd.pop();
+    else return EVALUATE_ERROR;//return the result
 }
 
